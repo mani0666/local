@@ -1,0 +1,41 @@
+node {
+    // Stage 1: Checkout Code
+    stage('Checkout') {
+        git 'https://github.com/your-repo/your-maven-project.git' // Replace with your repository URL
+    }
+
+    // Stage 2: Build with Maven
+    stage('Build') {
+        // Use withMaven step for proper Maven environment setup
+        withMaven(maven: 'Maven_3.8.6', jdk: 'JDK_11') { // Replace with your Maven and JDK tool names configured in Jenkins
+            sh 'mvn clean install -DskipTests' // Compile and package, skipping tests for faster build
+        }
+    }
+
+    // Stage 3: Run Unit Tests
+    stage('Test') {
+        withMaven(maven: 'Maven_3.8.6', jdk: 'JDK_11') {
+            sh 'mvn test' // Run unit tests
+        }
+        junit '**/target/surefire-reports/*.xml' // Publish JUnit test results
+    }
+
+    // Stage 4: Package and Archive Artifacts
+    stage('Package') {
+        withMaven(maven: 'Maven_3.8.6', jdk: 'JDK_11') {
+            sh 'mvn package' // Package the application (e.g., JAR/WAR)
+        }
+        archiveArtifacts artifacts: 'target/*.jar', fingerprint: true // Archive the built artifact
+    }
+
+    // Post-build actions (e.g., notifications)
+    post {
+        success {
+            echo 'Build successful!'
+        }
+        failure {
+            echo 'Build failed!'
+            // mail to: 'your-email@example.com', subject: "Jenkins Build Failed: ${env.JOB_NAME}", body: "Build ${env.BUILD_NUMBER} failed."
+        }
+    }
+}
